@@ -118,7 +118,7 @@ function goals(state = [], action) {
   }
 }
 
-// Root reducer to set state as obj with arr for each reducer under it
+// Root reducer sets state as obj with arr for each reducer under it
 function app(state = {}, action) {
   return {
     todos: todos(state.todos, action),
@@ -128,6 +128,12 @@ function app(state = {}, action) {
 
 const store = createStore(app);
 
+// * Should work exactly the same with Redux
+// ! Uncomment Redux cdn script tag in index.html before testing
+// const store = Redux.createStore(app);
+// * Can also use Redux.combineReducers() instead of combining them manually inn app func above
+// const store = Redux.createStore(Redux.combineReducers({ todos, goals }));
+
 //
 // ─── DOM MANIPULATION ───────────────────────────────────────────────────────────
 //
@@ -135,6 +141,13 @@ const store = createStore(app);
 const generateId = () => Math.random()
   .toString(36)
   .substring(2) + new Date().getTime().toString(36);
+
+function createRemoveButton(onClick) {
+  const removeBtn = document.createElement('button');
+  removeBtn.innerHTML = 'X';
+  removeBtn.addEventListener('click', onClick);
+  return removeBtn;
+}
 
 function addTodo() {
   const input = document.getElementById('todo');
@@ -160,6 +173,45 @@ function addGoal() {
     }),
   );
 }
+
+const elems = {
+  todos: document.getElementById('todos'),
+  goals: document.getElementById('goals'),
+};
+
+function addTodoToDOM(todo) {
+  const newNode = document.createElement('li');
+  const text = document.createTextNode(todo.name);
+  const removeBtn = createRemoveButton(() => {
+    store.dispatch(removeTodoAction(todo.id));
+  });
+  newNode.appendChild(text);
+  newNode.appendChild(removeBtn);
+  newNode.style.textDecoration = todo.complete ? 'line-through' : 'none';
+  newNode.addEventListener('click', () => {
+    store.dispatch(toggleTodoAction(todo.id));
+  });
+  elems.todos.appendChild(newNode);
+}
+
+function addGoalToDOM(goal) {
+  const newNode = document.createElement('li');
+  const text = document.createTextNode(goal.name);
+  const removeBtn = createRemoveButton(() => {
+    store.dispatch(removeGoalAction(goal.id));
+  });
+  newNode.appendChild(text);
+  newNode.appendChild(removeBtn);
+  elems.goals.appendChild(newNode);
+}
+
+store.subscribe(() => {
+  const { goals, todos } = store.getState();
+  elems.goals.innerHTML = '';
+  elems.todos.innerHTML = '';
+  goals.forEach(addGoalToDOM);
+  todos.forEach(addTodoToDOM);
+});
 
 document.getElementById('todoBtn').addEventListener('click', addTodo);
 document.getElementById('goalBtn').addEventListener('click', addGoal);
