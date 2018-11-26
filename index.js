@@ -18,7 +18,7 @@
  */
 
 //
-// ─── GENERAL STATE MANAGEMENT CODE ──────────────────────────────────────────────
+// ─── STATE MANAGEMENT "LIBRARY" ─────────────────────────────────────────────────
 //
 
 function createStore(reducer) {
@@ -126,44 +126,40 @@ function app(state = {}, action) {
   };
 }
 
-// const store = createStore(app);
-// store.subscribe(() => {//cb});
-// const unsubscribe = store.subscribe(() => {//same function});
-// unsubscribe();
-// store.dispatch({//action object})
+const store = createStore(app);
 
-/*
-const actionStructure = {
-  ADD_TODO: {
-    type: 'ADD_TODO',
-    todo: {
-      id: 0,
-      name: 'Learn Redux',
+//
+// ─── DOM MANIPULATION ───────────────────────────────────────────────────────────
+//
+
+const generateId = () => Math.random()
+  .toString(36)
+  .substring(2) + new Date().getTime().toString(36);
+
+function addTodo() {
+  const input = document.getElementById('todo');
+  const name = input.value;
+  input.value = '';
+  store.dispatch(
+    addTodoAction({
+      id: generateId(),
+      name,
       complete: false,
-    },
-  },
+    }),
+  );
+}
 
-  REMOVE_TODO: {
-    type: 'REMOVE_TODO',
-    id: 0,
-  },
+function addGoal() {
+  const input = document.getElementById('goal');
+  const name = input.value;
+  input.value = '';
+  store.dispatch(
+    addGoalAction({
+      id: generateId(),
+      name,
+    }),
+  );
+}
 
-  TOGGLE_TODO: {
-    type: 'TOGGLE_TODO',
-    id: 0,
-  },
-
-  ADD_GOAL: {
-    type: 'ADD_GOAL',
-    goal: {
-      id: 0,
-      name: 'Run a Marathon',
-    },
-  },
-
-  REMOVE_GOAL: {
-    type: 'REMOVE_GOAL',
-    id: 0,
-  },
-};
-*/
+document.getElementById('todoBtn').addEventListener('click', addTodo);
+document.getElementById('goalBtn').addEventListener('click', addGoal);
