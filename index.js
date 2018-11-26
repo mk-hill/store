@@ -17,7 +17,123 @@
  * --- Never produce any side effects (changing vars outside its scope, making ajax calls etc)
  */
 
-const actions = {
+//
+// ─── GENERAL STATE MANAGEMENT CODE ──────────────────────────────────────────────
+//
+
+function createStore(reducer) {
+  let state;
+  let listeners = [];
+
+  const getState = () => state;
+
+  // When state changes, functions passed into subscribe need to be called
+  // Will return an unsubscribe function that can be invoked when needed
+  const subscribe = (listener) => {
+    listeners.push(listener);
+    return () => {
+      // Remove listener function that had been passed in when subscribing
+      listeners = listeners.filter(l => l !== listener);
+    };
+  };
+
+  const dispatch = (action) => {
+    // call todos with current state and the action which was passed in, update state
+    state = reducer(state, action);
+    // Loop over listeners, invoke each when state is updated
+    listeners.forEach(listener => listener());
+  };
+
+  return {
+    getState,
+    subscribe,
+    dispatch,
+  };
+}
+
+//
+// ─── APP SPECIFIC CODE ──────────────────────────────────────────────────────────
+//
+
+//* Constants
+const ADD_TODO = 'ADD_TODO';
+const REMOVE_TODO = 'REMOVE_TODO';
+const TOGGLE_TODO = 'TOGGLE_TODO';
+const ADD_GOAL = 'ADD_GOAL';
+const REMOVE_GOAL = 'REMOVE_GOAL';
+
+//* Action Creators
+const addTodoAction = todo => ({
+  type: ADD_TODO,
+  todo,
+});
+
+const removeTodoAction = id => ({
+  type: REMOVE_TODO,
+  id,
+});
+
+const toggleTodoAction = id => ({
+  type: TOGGLE_TODO,
+  id,
+});
+
+const addGoalAction = goal => ({
+  type: ADD_GOAL,
+  goal,
+});
+
+const removeGoalAction = id => ({
+  type: REMOVE_GOAL,
+  id,
+});
+
+//* Reducers
+// Set initial state if undefined in reducer
+function todos(state = [], action) {
+  switch (action.type) {
+    case ADD_TODO:
+      // Using concat instead of push to not mutate original state
+      return state.concat([action.todo]);
+    case REMOVE_TODO:
+      return state.filter(todo => todo.id !== action.id);
+    case TOGGLE_TODO:
+      // New state to be returns includes all other todos as they were
+      // and todo with matching id has its complete bool inverted
+      // Using Object.assign so as to not hard code other properties, just flip complete
+      return state.map(todo => (todo.id !== action.id ? todo : Object.assign({}, todo, { complete: !todo.complete })));
+    default:
+      return state;
+  }
+}
+
+function goals(state = [], action) {
+  switch (action.type) {
+    case ADD_GOAL:
+      return state.concat([action.goal]);
+    case REMOVE_GOAL:
+      return state.filter(goal => goal.id !== action.id);
+    default:
+      return state;
+  }
+}
+
+// Root reducer to set state as obj with arr for each reducer under it
+function app(state = {}, action) {
+  return {
+    todos: todos(state.todos, action),
+    goals: goals(state.goals, action),
+  };
+}
+
+// const store = createStore(app);
+// store.subscribe(() => {//cb});
+// const unsubscribe = store.subscribe(() => {//same function});
+// unsubscribe();
+// store.dispatch({//action object})
+
+/*
+const actionStructure = {
   ADD_TODO: {
     type: 'ADD_TODO',
     todo: {
@@ -50,57 +166,4 @@ const actions = {
     id: 0,
   },
 };
-
-// Set initial state if undefined in reducer
-function todos(state = [], action) {
-  switch (action.type) {
-    case 'ADD_TODO':
-      // Using concat instead of push to not mutate original state
-      return state.concat([action.todo]);
-    case 'REMOVE_TODO':
-      return state.filter(todo => todo.id !== action.id);
-    case 'TOGGLE_TODO':
-      // New state to be returns includes all other todos as they were
-      // and todo with matching id has its complete bool inverted
-      // Using Object.assign so as to not hard code other properties, just flip complete
-      return state.map(todo => (todo.id !== action.id ? todo : Object.assign({}, todo, { complete: !todo.complete })));
-    default:
-      return state;
-  }
-}
-
-function createStore(reducer) {
-  let state;
-  let listeners = [];
-
-  const getState = () => state;
-
-  // When state changes, functions passed into subscribe need to be called
-  // Will return an unsubscribe function that can be invoked when needed
-  const subscribe = (listener) => {
-    listeners.push(listener);
-    return () => {
-      // Remove listener function that had been passed in when subscribing
-      listeners = listeners.filter(l => l !== listener);
-    };
-  };
-
-  const dispatch = (action) => {
-    // call todos with current state and the action which was passed in, update state
-    state = reducer(state, action);
-    // Loop over listeners, invoke each when state is updated
-    listeners.forEach(listener => listener());
-  };
-
-  return {
-    getState,
-    subscribe,
-    dispatch,
-  };
-}
-
-// const store = createStore(todos);
-// store.subscribe(() => {//cb});
-// const unsubscribe = store.subscribe(() => {//same function});
-// unsubscribe();
-// store.dispatch({//action object})
+*/
