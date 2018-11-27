@@ -11,7 +11,6 @@ class App extends React.Component {
 
     return (
       <div>
-        <h1>React</h1>
         <Todos todos={todos} store={store} />
         <Goals goals={goals} store={store} />
       </div>
