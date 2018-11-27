@@ -2,12 +2,18 @@ class App extends React.Component {
   componentDidMount = () => {
     const { store } = this.props;
 
+    Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
+      store.dispatch(receiveDataAction(todos, goals));
+    });
+
     store.subscribe(() => this.forceUpdate());
   };
 
   render() {
     const { store } = this.props;
-    const { todos, goals } = store.getState();
+    const { todos, goals, loading } = store.getState();
+
+    if (loading) return <h3>Loading fake api data</h3>;
 
     return (
       <div>
@@ -21,7 +27,7 @@ class App extends React.Component {
 const List = ({ items, remove, toggle }) => (
   <ul>
     {items.map(item => (
-      <li onClick={() => (toggle ? toggle(item) : null)} key={item.id}>
+      <li onClick={() => (toggle ? toggle(item.id) : null)} key={item.id}>
         <span style={{ textDecoration: item.complete ? 'line-through' : 'none' }}>{item.name}</span>
         <button onClick={() => remove(item)}>X</button>
       </li>
@@ -31,25 +37,32 @@ const List = ({ items, remove, toggle }) => (
 
 class Todos extends React.Component {
   addItem = e => {
-    const { dispatch } = this.props.store;
     e.preventDefault();
-    const name = this.input.value;
-    this.input.value = '';
-    dispatch(
-      addTodoAction({
-        id: generateId(),
-        name,
-        complete: false,
-      }),
-    );
+    return API.saveTodo(this.input.value)
+      .then(todo => {
+        this.input.value = '';
+        this.props.store.dispatch(addTodoAction(todo));
+      })
+      .catch(() => alert('Api add todo mock error caught succesfully, item not added to store.'));
   };
 
   removeItem = todo => {
-    this.props.store.dispatch(removeTodoAction(todo.id));
+    const { dispatch } = this.props.store;
+    // Optimistic update for faster ui response
+    dispatch(removeTodoAction(todo.id));
+    return API.deleteTodo(todo.id).catch(() => {
+      dispatch(addTodoAction(todo));
+      alert('Api removal mock error caught succesfully, todo item added back to store.');
+    });
   };
 
-  toggleItem = todo => {
-    this.props.store.dispatch(toggleTodoAction(todo.id));
+  toggleItem = id => {
+    const { dispatch } = this.props.store;
+    dispatch(toggleTodoAction(id));
+    return API.saveTodoToggle(id).catch(() => {
+      dispatch(toggleTodoAction(id));
+      alert('Api toggle mock error caught succesfully, toggle state reverted.');
+    });
   };
 
   render() {
@@ -66,20 +79,23 @@ class Todos extends React.Component {
 
 class Goals extends React.Component {
   addItem = e => {
-    const { dispatch } = this.props.store;
     e.preventDefault();
-    const name = this.input.value;
-    this.input.value = '';
-    dispatch(
-      addGoalAction({
-        id: generateId(),
-        name,
-      }),
-    );
+    return API.saveGoal(this.input.value)
+      .then(goal => {
+        this.input.value = '';
+        this.props.store.dispatch(addGoalAction(goal));
+      })
+      .catch(() => alert('Api add goal mock error caught succesfully, item not added to store.'));
   };
 
   removeItem = goal => {
-    this.props.store.dispatch(removeGoalAction(goal.id));
+    const { dispatch } = this.props.store;
+    // Optimistic update for faster ui response
+    dispatch(removeGoalAction(goal.id));
+    return API.deleteGoal(goal.id).catch(() => {
+      dispatch(addGoalAction(goal));
+      alert('Api removal mock error caught succesfully, goal item added back to store.');
+    });
   };
 
   render() {

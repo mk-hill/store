@@ -61,6 +61,7 @@ const REMOVE_TODO = 'REMOVE_TODO';
 const TOGGLE_TODO = 'TOGGLE_TODO';
 const ADD_GOAL = 'ADD_GOAL';
 const REMOVE_GOAL = 'REMOVE_GOAL';
+const RECEIVE_DATA = 'RECEIVE_DATA';
 
 //* Action Creators
 const addTodoAction = todo => ({
@@ -86,6 +87,12 @@ const addGoalAction = goal => ({
 const removeGoalAction = id => ({
   type: REMOVE_GOAL,
   id,
+});
+
+const receiveDataAction = (todos, goals) => ({
+  type: RECEIVE_DATA,
+  todos,
+  goals,
 });
 
 //* Middleware attempt
@@ -143,6 +150,9 @@ function todos(state = [], action) {
       // and todo with matching id has its complete bool inverted
       // Using Object.assign so as to not hard code other properties, just flip complete
       return state.map(todo => (todo.id !== action.id ? todo : Object.assign({}, todo, { complete: !todo.complete })));
+    case RECEIVE_DATA:
+      // New state comes in as array on action.todos
+      return action.todos;
     default:
       return state;
   }
@@ -154,6 +164,17 @@ function goals(state = [], action) {
       return state.concat([action.goal]);
     case REMOVE_GOAL:
       return state.filter(goal => goal.id !== action.id);
+    case RECEIVE_DATA:
+      return action.goals;
+    default:
+      return state;
+  }
+}
+
+function loading(state = true, action) {
+  switch (action.type) {
+    case RECEIVE_DATA:
+      return false;
     default:
       return state;
   }
@@ -176,9 +197,6 @@ const store = createStore(app);
 // const store = Redux.createStore(app);
 // * Can also use Redux.combineReducers() instead of combining them manually inn app func above
 const store = Redux.createStore(
-  Redux.combineReducers({ todos, goals }),
+  Redux.combineReducers({ todos, goals, loading }),
   Redux.applyMiddleware(logger, checker),
 );
-const generateId = () => Math.random()
-  .toString(36)
-  .substring(2) + new Date().getTime().toString(36);
