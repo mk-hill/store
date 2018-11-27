@@ -100,6 +100,15 @@ const checker = store => next => (action) => {
   return next(action);
 };
 
+const logger = store => next => (action) => {
+  console.group(action.type);
+  console.log('The action: ', action);
+  const result = next(action);
+  console.log('New state: ', store.getState());
+  console.groupEnd();
+  return result;
+};
+
 /**
  * ES5 below
 // Currying for any following middleware use
@@ -168,7 +177,7 @@ const store = createStore(app);
 // * Can also use Redux.combineReducers() instead of combining them manually inn app func above
 const store = Redux.createStore(
   Redux.combineReducers({ todos, goals }),
-  Redux.applyMiddleware(checker),
+  Redux.applyMiddleware(logger, checker),
 );
 
 //
