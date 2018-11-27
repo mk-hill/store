@@ -1,14 +1,56 @@
 const Context = React.createContext();
 
+//
+// ─── CREATE ABSTRACTION OVER REDUX AND CONTEXT ──────────────────────────────────
+// * Provider: Pass state into context
+// * Connect: Render any component, passing that component any data it needs from the store
+
+class Provider extends React.Component {
+  render() {
+    return <Context.Provider value={this.props.store}>{this.props.children}</Context.Provider>;
+  }
+}
+
+// Connect will return a new function which takes in a component
+function connect(mapStateToProps) {
+  return Component => {
+    class Receiver extends React.Component {
+      componentDidMount() {
+        const { subscribe } = this.props.store;
+
+        this.unsubscribe = subscribe(() => this.forceUpdate());
+      }
+
+      componentWillUnmount() {
+        this.unsubscribe();
+      }
+
+      render() {
+        const { dispatch, getState } = store;
+        const state = getState();
+        const stateNeeded = mapStateToProps(state);
+        // Passing each component dispatch in addition to the state it needs
+        return <Component {...stateNeeded} dispatch={dispatch} />;
+      }
+    }
+
+    class ConnectedComponent extends React.Component {
+      render() {
+        return <Context.Consumer>{store => <Receiver store={store} />}</Context.Consumer>;
+      }
+    }
+    return ConnectedComponent;
+  };
+}
+
 class App extends React.Component {
   componentDidMount = () => {
-    const { store } = this.props;
-    store.dispatch(handleLoadData(this));
-    store.subscribe(() => this.forceUpdate());
+    const { dispatch } = this.props;
+    dispatch(handleLoadData(this));
   };
 
   render() {
-    const { loading } = this.props.store.getState();
+    const { loading } = this.props;
 
     if (loading) return <h3>Loading fake api data</h3>;
 
@@ -21,11 +63,18 @@ class App extends React.Component {
   }
 }
 
-class ConnectedApp extends React.Component {
-  render() {
-    return <Context.Consumer>{store => <App store={store} />}</Context.Consumer>;
-  }
-}
+// class ConnectedApp extends React.Component {
+//   render() {
+//     return <Context.Consumer>{store => <App store={store} />}</Context.Consumer>;
+//   }
+// }
+
+// Invoke connect, passing it a function which it will invoke
+// Connect will pass in the state to that function, mapping required parts of the state
+// to the component's props
+const ConnectedApp = connect(state => ({
+  loading: state.loading,
+}))(App);
 
 const List = ({ items, remove, toggle }) => (
   <ul>
@@ -65,18 +114,20 @@ class Todos extends React.Component {
   }
 }
 
-class ConnectedTodos extends React.Component {
-  render() {
-    return (
-      <Context.Consumer>
-        {store => {
-          const { todos } = store.getState();
-          return <Todos todos={todos} dispatch={store.dispatch} />;
-        }}
-      </Context.Consumer>
-    );
-  }
-}
+// class ConnectedTodos extends React.Component {
+//   render() {
+//     return (
+//       <Context.Consumer>
+//         {store => {
+//           const { todos } = store.getState();
+//           return <Todos todos={todos} dispatch={store.dispatch} />;
+//         }}
+//       </Context.Consumer>
+//     );
+//   }
+// }
+
+const ConnectedTodos = connect(state => ({ todos: state.todos }))(Todos);
 
 class Goals extends React.Component {
   addItem = e => {
@@ -100,24 +151,20 @@ class Goals extends React.Component {
   }
 }
 
-class ConnectedGoals extends React.Component {
-  render() {
-    return (
-      <Context.Consumer>
-        {store => {
-          const { goals } = store.getState();
-          return <Goals goals={goals} dispatch={store.dispatch} />;
-        }}
-      </Context.Consumer>
-    );
-  }
-}
+// class ConnectedGoals extends React.Component {
+//   render() {
+//     return (
+//       <Context.Consumer>
+//         {store => {
+//           const { goals } = store.getState();
+//           return <Goals goals={goals} dispatch={store.dispatch} />;
+//         }}
+//       </Context.Consumer>
+//     );
+//   }
+// }
 
-class Provider extends React.Component {
-  render() {
-    return <Context.Provider value={this.props.store}>{this.props.children}</Context.Provider>;
-  }
-}
+const ConnectedGoals = connect(state => ({ goals: state.goals }))(Goals);
 
 ReactDOM.render(
   <Provider store={store}>
