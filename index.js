@@ -95,7 +95,54 @@ const receiveDataAction = (todos, goals) => ({
   goals,
 });
 
-//* Middleware attempt
+// Returning func, using thunk
+const handleAddTodo = (todoName, callback) => dispatch => API.saveTodo(todoName)
+  .then((todo) => {
+    callback();
+    dispatch(addTodoAction(todo));
+  })
+  .catch(() => alert(`Api add todo mock error caught succesfully, ${todoName} not added to store.`));
+
+const handleDeleteTodo = todo => (dispatch) => {
+  // Optimistic update for faster ui response
+  dispatch(removeTodoAction(todo.id));
+  return API.deleteTodo(todo.id).catch(() => {
+    dispatch(addTodoAction(todo));
+    alert('Api removal mock error caught succesfully, todo item added back to store.');
+  });
+};
+
+const handleToggleTodo = id => (dispatch) => {
+  dispatch(toggleTodoAction(id));
+  return API.saveTodoToggle(id).catch(() => {
+    dispatch(toggleTodoAction(id));
+    alert('Api toggle mock error caught succesfully, toggle state reverted.');
+  });
+};
+
+const handleAddGoal = (goalName, callback) => dispatch => API.saveGoal(goalName)
+  .then((goal) => {
+    callback();
+    dispatch(addGoalAction(goal));
+  })
+  .catch(() => alert(`Api add goal mock error caught succesfully, ${goalName} not added to store.`));
+
+const handleDeleteGoal = goal => (dispatch) => {
+  // Optimistic update for faster ui response
+  dispatch(removeGoalAction(goal.id));
+  return API.deleteGoal(goal.id).catch(() => {
+    dispatch(addGoalAction(goal));
+    alert('Api removal mock error caught succesfully, goal item added back to store.');
+  });
+};
+
+const handleLoadData = () => (dispatch) => {
+  Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
+    dispatch(receiveDataAction(todos, goals));
+  });
+};
+
+//* Middleware
 // Hook into the moment after action is dispatched, before it hits the reducer
 const checker = store => next => (action) => {
   if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes('test')) {
@@ -105,15 +152,6 @@ const checker = store => next => (action) => {
     return alert('Test triggerred');
   }
   return next(action);
-};
-
-const logger = store => next => (action) => {
-  console.group(action.type);
-  console.log('The action: ', action);
-  const result = next(action);
-  console.log('New state: ', store.getState());
-  console.groupEnd();
-  return result;
 };
 
 /**
@@ -135,6 +173,17 @@ function checker(store) {
   };
 }
  */
+
+const logger = store => next => (action) => {
+  console.group(action.type);
+  console.log('The action: ', action);
+  const result = next(action);
+  console.log('New state: ', store.getState());
+  console.groupEnd();
+  return result;
+};
+
+const thunk = store => next => action => (typeof action === 'function' ? action(store.dispatch) : next(action));
 
 //* Reducers
 // Set initial state if undefined in reducer
@@ -198,5 +247,5 @@ const store = createStore(app);
 // * Can also use Redux.combineReducers() instead of combining them manually inn app func above
 const store = Redux.createStore(
   Redux.combineReducers({ todos, goals, loading }),
-  Redux.applyMiddleware(logger, checker),
+  Redux.applyMiddleware(thunk, logger, checker),
 );
