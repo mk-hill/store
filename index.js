@@ -20,7 +20,9 @@
 //
 // ─── STATE MANAGEMENT "LIBRARY" ─────────────────────────────────────────────────
 //
-
+/**
+ * Switched to Redux here | checkout not-redux branch for implementation
+ *
 function createStore(reducer) {
   let state;
   let listeners = [];
@@ -50,6 +52,7 @@ function createStore(reducer) {
     dispatch,
   };
 }
+ */
 
 //
 // ─── APP SPECIFIC CODE ──────────────────────────────────────────────────────────
@@ -183,7 +186,10 @@ const logger = store => next => (action) => {
   return result;
 };
 
+/**
+ * Switched to redux-thunk | git checkout custom-thunk
 const thunk = store => next => action => (typeof action === 'function' ? action(store.dispatch) : next(action));
+ */
 
 //* Reducers
 // Set initial state if undefined in reducer
@@ -242,10 +248,10 @@ const store = createStore(app);
  */
 
 // * Should work exactly the same with Redux
-// ! Uncomment Redux cdn script tag in index.html before testing
+//  Uncomment Redux cdn script tag in index.html before testing
 // const store = Redux.createStore(app);
 // * Can also use Redux.combineReducers() instead of combining them manually inn app func above
 const store = Redux.createStore(
   Redux.combineReducers({ todos, goals, loading }),
-  Redux.applyMiddleware(thunk, logger, checker),
+  Redux.applyMiddleware(ReduxThunk.default, logger, checker),
 );
