@@ -5,6 +5,9 @@ const Context = React.createContext();
 // * Provider: Pass state into context
 // * Connect: Render any component, passing that component any data it needs from the store
 
+/**
+ * Using ReactRedux instead of custom connect and provider | git checkout no-reactRedux
+ 
 class Provider extends React.Component {
   render() {
     return <Context.Provider value={this.props.store}>{this.props.children}</Context.Provider>;
@@ -63,6 +66,8 @@ class App extends React.Component {
   }
 }
 
+*/
+
 // class ConnectedApp extends React.Component {
 //   render() {
 //     return <Context.Consumer>{store => <App store={store} />}</Context.Consumer>;
@@ -72,7 +77,7 @@ class App extends React.Component {
 // Invoke connect, passing it a function which it will invoke
 // Connect will pass in the state to that function, mapping required parts of the state
 // to the component's props
-const ConnectedApp = connect(state => ({
+const ConnectedApp = ReactRedux.connect(state => ({
   loading: state.loading,
 }))(App);
 
@@ -127,7 +132,7 @@ class Todos extends React.Component {
 //   }
 // }
 
-const ConnectedTodos = connect(state => ({ todos: state.todos }))(Todos);
+const ConnectedTodos = ReactRedux.connect(state => ({ todos: state.todos }))(Todos);
 
 class Goals extends React.Component {
   addItem = e => {
@@ -164,11 +169,11 @@ class Goals extends React.Component {
 //   }
 // }
 
-const ConnectedGoals = connect(state => ({ goals: state.goals }))(Goals);
+const ConnectedGoals = ReactRedux.connect(state => ({ goals: state.goals }))(Goals);
 
 ReactDOM.render(
-  <Provider store={store}>
+  <ReactRedux.Provider store={store}>
     <ConnectedApp />
-  </Provider>,
+  </ReactRedux.Provider>,
   document.getElementById('react'),
 );
