@@ -88,6 +88,38 @@ const removeGoalAction = id => ({
   id,
 });
 
+//* Middleware attempt
+// Hook into the moment after action is dispatched, before it hits the reducer
+const checker = store => next => (action) => {
+  if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes('test')) {
+    return alert('Test triggerred');
+  }
+  if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes('test')) {
+    return alert('Test triggerred');
+  }
+  return next(action);
+};
+
+/**
+ * ES5 below
+// Currying for any following middleware use
+function checker(store) {
+  // next will either be the next middleware in the chain or dispatch if none
+  return function (next) {
+    return function (action) {
+      // Middleware goes here
+      if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes('test')) {
+        return alert('Test triggerred');
+      }
+      if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes('test')) {
+        return alert('Test triggerred');
+      }
+      return next(action);
+    };
+  };
+}
+ */
+
 //* Reducers
 // Set initial state if undefined in reducer
 function todos(state = [], action) {
@@ -119,6 +151,7 @@ function goals(state = [], action) {
 }
 
 // Root reducer sets state as obj with arr for each reducer under it
+/**
 function app(state = {}, action) {
   return {
     todos: todos(state.todos, action),
@@ -127,12 +160,16 @@ function app(state = {}, action) {
 }
 
 const store = createStore(app);
+ */
 
 // * Should work exactly the same with Redux
 // ! Uncomment Redux cdn script tag in index.html before testing
 // const store = Redux.createStore(app);
 // * Can also use Redux.combineReducers() instead of combining them manually inn app func above
-// const store = Redux.createStore(Redux.combineReducers({ todos, goals }));
+const store = Redux.createStore(
+  Redux.combineReducers({ todos, goals }),
+  Redux.applyMiddleware(checker),
+);
 
 //
 // ─── DOM MANIPULATION ───────────────────────────────────────────────────────────
